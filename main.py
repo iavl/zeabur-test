@@ -44,7 +44,7 @@ def get_data():
     output = {
         'total_count': len(transactions),
         'transactions': transactions,
-        'total_amount': total / 10**18
+        'total_amount': int(total / 10**18)
     }
     return output
 
