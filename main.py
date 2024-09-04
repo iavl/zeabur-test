@@ -9,6 +9,7 @@ app = Flask(__name__)
 
 def get_data():
     url = 'https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=7351004&toBlock=latest&address=0x28F14d917fddbA0c1f2923C406952478DfDA5578&topic0=0x2808f92d5a0fada467cbe4e766f62f323e78271a7471058a87ef63a9e3e4c5c5'
+    print(url)
     response = requests.get(url)
     content = response.text
 
@@ -37,4 +38,4 @@ def api_data():
     return jsonify(data)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10001)
+    app.run(host='0.0.0.0', port=8080)
