@@ -9,14 +9,14 @@
         .chart-container {
             position: relative;
             height: 400px;
-            margin-bottom: 150px; /* 增加底部边距以容纳地址链接 */
+            margin-bottom: 200px; /* Increased to accommodate longer labels */
         }
         .address-links {
             position: absolute;
             top: 100%;
             left: 0;
             right: 0;
-            height: 120px; /* 增加高度以容纳旋转的文本 */
+            height: 170px; /* Increased height for longer labels */
             overflow: hidden;
         }
         .address-links a {
@@ -24,6 +24,12 @@
             text-align: left;
             text-decoration: none;
             color: #333;
+            max-width: none; /* Remove max-width to allow full width */
+            width: 100%;
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .address-links a:hover {
             text-decoration: underline;
@@ -101,52 +107,62 @@
                     ? `https://explorer.rss3.io/nodes/${item.address}`
                     : `https://explorer.rss3.io/portfolio/${item.address}`;
                 link.target = '_blank';
-                const displayText = isNode ? item.name : item.address.slice(0, 10) + '...';
+                const displayText = isNode ? item.name : item.address;
                 link.textContent = displayText;
-                link.title = item.address; // 设置完整地址为悬停文本
+                link.title = item.address;
                 link.style.position = 'absolute';
                 link.style.width = `${barWidth}px`;
                 link.style.left = `${chartArea.left + index * barWidth}px`;
                 link.style.top = '0';
                 link.style.transformOrigin = 'left top';
                 link.style.transform = 'rotate(-45deg) translateY(100%)';
-                link.style.whiteSpace = 'nowrap';
-                link.style.overflow = 'hidden';
-                link.style.textOverflow = 'ellipsis';
                 container.appendChild(link);
             });
         }
 
         function createChart(elementId, label, data, backgroundColor, title, isUserChart = false) {
             const ctx = document.getElementById(elementId).getContext('2d');
+            const datasets = isUserChart ? [
+                {
+                    label: 'Unstake Amount',
+                    data: data.map(item => item.unstake_amount / Math.pow(10, 18)),
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                },
+                {
+                    label: 'Bridge Withdrawal Amount',
+                    data: data.map(item => item.bridge_withdrawal_amount / Math.pow(10, 18)),
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                }
+            ] : [
+                {
+                    label: label,
+                    data: data.map(item => item.total_amount / Math.pow(10, 18)),
+                    backgroundColor: backgroundColor
+                }
+            ];
+
             const chart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: data.map(item => ''),
-                    datasets: [{
-                        label: 'Unstake Amount',
-                        data: data.map(item => item.unstake_amount / Math.pow(10, 18)),
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)'
-                    }, {
-                        label: 'Bridge Withdrawal Amount',
-                        data: data.map(item => item.bridge_withdrawal_amount / Math.pow(10, 18)),
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
-                    }]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
                         x: {
-                            display: !isUserChart,
-                            stacked: true,
+                            display: false,
+                            stacked: isUserChart,
                             grid: {
                                 display: false
-                            }
+                            },
+                            barPercentage: isUserChart ? 0.6 : 0.9,
+                            categoryPercentage: isUserChart ? 0.8 : 0.9
                         },
                         y: {
-                            type: isUserChart ? 'logarithmic' : 'linear',
-                            stacked: true,
+                            type: 'linear',
+                            stacked: isUserChart,
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value, index, values) {
@@ -209,10 +225,8 @@
         Promise.all([fetchNodeData(), fetchUserData(), fetchBridgeWithdrawalData()]).then(async ([nodeData, userData, bridgeWithdrawalData]) => {
             let nodeDataWithNames = await fetchAllNodeNames(nodeData.results);
             
-            // 对数据进行排序
             nodeDataWithNames = sortDataByAmount(nodeDataWithNames);
             
-            // 合并用户数据和桥接提款数据
             let combinedUserData = userData.results.map(user => {
                 const bridgeWithdrawal = bridgeWithdrawalData.results.find(bw => bw.address === user.address);
                 return {
@@ -223,12 +237,11 @@
                 };
             });
             
-            // 过滤并排序合并后的用户数据，最小金额为 20000 * 10^18 (因为金额单位是 wei)
-            combinedUserData = filterAndSortData(combinedUserData, 20000 * Math.pow(10, 18));
+            combinedUserData = filterAndSortData(combinedUserData, 10000 * Math.pow(10, 18));
             
             displayTotalStats(nodeData, userData, bridgeWithdrawalData);
 
-            const nodeAmountChart = createChart('nodeAmountChart', 'Amount', nodeDataWithNames, 'rgba(75, 192, 192, 0.6)', 'Total Unstake Amount By Node', false);
+            const nodeAmountChart = createChart('nodeAmountChart', 'Unstake Amount', nodeDataWithNames, 'rgba(75, 192, 192, 0.6)', 'Total Unstake Amount By Node', false);
             const userAmountChart = createChart('userAmountChart', 'Amount', combinedUserData, null, 'Unstake and Bridge Withdrawal Amount By User', true);
             
             setTimeout(() => {
