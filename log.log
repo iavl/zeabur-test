@@ -1,0 +1,30 @@
+INFO:     Will watch for changes in these directories: ['/root/zeabur-test']
+INFO:     Uvicorn running on http://0.0.0.0:10001 (Press CTRL+C to quit)
+INFO:     Started reloader process [1546508] using StatReload
+INFO:     Started server process [1546526]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+Requesting URL: https://scan.rss3.io/api?module=block&action=eth_block_number
+start block:  8735408
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=8735408&toBlock=8735435&address=0x28F14d917fddbA0c1f2923C406952478DfDA5578&topic0=0x2808f92d5a0fada467cbe4e766f62f323e78271a7471058a87ef63a9e3e4c5c5
+No logs found
+fetch logs: [ 8735408  -  8735435 ] count:  0
+scan block end
+INFO:     212.107.30.69:23391 - "GET / HTTP/1.1" 200 OK
+Requesting URL: https://scan.rss3.io/api?module=block&action=eth_block_number
+latest block: 8735435
+start block:  8735436
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=8735436&toBlock=8735435&address=0x28F14d917fddbA0c1f2923C406952478DfDA5578&topic0=0x2808f92d5a0fada467cbe4e766f62f323e78271a7471058a87ef63a9e3e4c5c5
+No logs found
+fetch logs: [ 8735436  -  8735435 ] count:  0
+scan block end
+INFO:     212.107.30.69:23391 - "GET /statistics HTTP/1.1" 200 OK
+INFO:     212.107.30.69:23391 - "GET / HTTP/1.1" 200 OK
+Requesting URL: https://scan.rss3.io/api?module=block&action=eth_block_number
+latest block: 8735443
+start block:  8735436
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=8735436&toBlock=8735443&address=0x28F14d917fddbA0c1f2923C406952478DfDA5578&topic0=0x2808f92d5a0fada467cbe4e766f62f323e78271a7471058a87ef63a9e3e4c5c5
+No logs found
+fetch logs: [ 8735436  -  8735443 ] count:  0
+scan block end
+INFO:     212.107.30.69:23391 - "GET /statistics HTTP/1.1" 200 OK

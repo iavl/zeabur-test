@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unstake Statistics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 100px;  // 增加底部边距，为 node name 腾出空间
+        }
+        .address-links {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: flex-start;  // 改为左对齐
+            padding: 0 8px;
+            margin-top: 10px;
+        }
+        .address-links a {
+            font-size: 10px;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transform: rotate(-45deg);
+            transform-origin: left top;
+            position: absolute;  // 使用绝对定位
+        }
+        .total-stats {
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        .detail-link {
+            margin-top: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Unstake Statistics</h1>
+    <div class="total-stats">
+        <div id="totalAmount"></div>
+        <div id="totalCount"></div>
+        <div class="detail-link">
+            <a href="/statistics">View Details</a>
+        </div>
+    </div>
+    <div class="chart-container">
+        <canvas id="amountChart"></canvas>
+        <div id="amountChartLinks" class="address-links"></div>
+    </div>
+    <div class="chart-container">
+        <canvas id="countChart"></canvas>
+        <div id="countChartLinks" class="address-links"></div>
+    </div>
+
+    <script>
+        async function fetchData() {
+            const response = await fetch('/statistics');
+            return await response.json();
+        }
+
+        async function fetchNodeName(address) {
+            try {
+                const response = await fetch(`https://gi.rss3.io/nta/nodes/${address}`);
+                const data = await response.json();
+                console.log('API response for address', address, ':', data);
+                return data.data.name || address; // Return address if name is not available
+            } catch (error) {
+                console.error('Error fetching node name for address', address, ':', error);
+                return address; // Return address if there's an error
+            }
+        }
+
+        async function fetchAllNodeNames(data) {
+            const namePromises = data.map(item => fetchNodeName(item.address));
+            const names = await Promise.all(namePromises);
+            return data.map((item, index) => ({...item, name: names[index]}));
+        }
+
+        function createAddressLinks(data, containerId, chart) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            const chartWidth = chart.chartArea.right - chart.chartArea.left;
+            const barWidth = chartWidth / data.length;
+            
+            data.forEach((item, index) => {
+                const link = document.createElement('a');
+                link.href = `https://explorer.rss3.io/nodes/${item.address}`;
+                link.target = '_blank';
+                link.textContent = item.name;
+                link.title = `${item.name} (${item.address})`;
+                link.style.width = `${barWidth}px`;
+                link.style.left = `${chart.chartArea.left + index * barWidth}px`;
+                container.appendChild(link);
+            });
+        }
+
+        function createChart(elementId, label, data, backgroundColor, title) {
+            const ctx = document.getElementById(elementId).getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(item => ''),  // 使用空标签
+                    datasets: [{
+                        label: label,
+                        data: data.map(item => {
+                            if (label === 'Amount') {
+                                return (item.total_amount / Math.pow(10, 21)).toFixed(2);
+                            }
+                            return item.total_count;
+                        }),
+                        backgroundColor: backgroundColor
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    if (label === 'Amount') {
+                                        return value + ' K RSS3';
+                                    }
+                                    return value;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: title,
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        if (label === 'Amount: ') {
+                                            label += context.parsed.y + ' K RSS3';
+                                        } else {
+                                            label += context.parsed.y;
+                                        }
+                                    }
+                                    return label;
+                                },
+                                title: function(tooltipItems) {
+                                    const item = data[tooltipItems[0].dataIndex];
+                                    return `${item.name}\nAddress: ${item.address}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            return chart;
+        }
+
+        function displayTotalStats(data) {
+            const totalAmount = data.reduce((sum, item) => sum + item.total_amount, 0);
+            const totalCount = data.reduce((sum, item) => sum + item.total_count, 0);
+
+            const totalAmountInKRSS3 = (totalAmount / Math.pow(10, 21)).toFixed(2);
+
+            document.getElementById('totalAmount').textContent = `Total Unstake Amount: ${totalAmountInKRSS3} K RSS3`;
+            document.getElementById('totalCount').textContent = `Total Unstake Count: ${totalCount}`;
+        }
+
+        fetchData().then(async data => {
+            const dataWithNames = await fetchAllNodeNames(data.results);
+            
+            displayTotalStats(dataWithNames);
+
+            const amountChart = createChart('amountChart', 'Amount', dataWithNames, 'rgba(75, 192, 192, 0.6)', 'Total Unstake Amount By Node');
+            const countChart = createChart('countChart', 'Count', dataWithNames, 'rgba(153, 102, 255, 0.6)', 'Total Unstake Count By Node');
+            
+            // Wait for charts to render before creating address links
+            setTimeout(() => {
+                createAddressLinks(dataWithNames, 'amountChartLinks', amountChart);
+                createAddressLinks(dataWithNames, 'countChartLinks', countChart);
+            }, 0);
+        });
+    </script>
+</body>
+</html>
