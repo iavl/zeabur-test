@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unstake Statistics</title>
+    <title>Unstake and Bridge Withdrawal Statistics</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .chart-container {
@@ -39,15 +39,10 @@
     </style>
 </head>
 <body>
-    <h1>Unstake Statistics</h1>
+    <h1>Unstake and Bridge Withdrawal Statistics</h1>
     <div class="total-stats">
         <div id="totalAmount"></div>
         <div id="totalCount"></div>
-        <!-- 移除了以下 div
-        <div class="detail-link">
-            <a href="/statistics">View Details</a>
-        </div>
-        -->
     </div>
     <h2>Node Statistics <a href="/node_statistics" class="detail-link">(View Node Details)</a></h2>
     <div class="chart-container">
@@ -71,8 +66,8 @@
             return await response.json();
         }
 
-        async function fetchData() {
-            const response = await fetch('/statistics');
+        async function fetchBridgeWithdrawalData() {
+            const response = await fetch('/bridge_withdrawal_statistics');
             return await response.json();
         }
 
@@ -122,10 +117,6 @@
             });
         }
 
-        function log2(x) {
-            return Math.log2(x + 1);  // 使用以2为底的数，加1避免log(0)的情况
-        }
-
         function createChart(elementId, label, data, backgroundColor, title, isUserChart = false) {
             const ctx = document.getElementById(elementId).getContext('2d');
             const chart = new Chart(ctx, {
@@ -133,9 +124,13 @@
                 data: {
                     labels: data.map(item => ''),
                     datasets: [{
-                        label: label,
-                        data: data.map(item => item.total_amount / Math.pow(10, 18)),
-                        backgroundColor: backgroundColor
+                        label: 'Unstake Amount',
+                        data: data.map(item => item.unstake_amount / Math.pow(10, 18)),
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                    }, {
+                        label: 'Bridge Withdrawal Amount',
+                        data: data.map(item => item.bridge_withdrawal_amount / Math.pow(10, 18)),
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
                     }]
                 },
                 options: {
@@ -143,13 +138,15 @@
                     maintainAspectRatio: false,
                     scales: {
                         x: {
-                            display: !isUserChart,  // 对于用户图表，不显示 x 轴
+                            display: !isUserChart,
+                            stacked: true,
                             grid: {
                                 display: false
                             }
                         },
                         y: {
                             type: isUserChart ? 'logarithmic' : 'linear',
+                            stacked: true,
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value, index, values) {
@@ -190,9 +187,13 @@
             return chart;
         }
 
-        function displayTotalStats(data) {
-            const totalAmountInRSS3 = (data.total_amount / Math.pow(10, 18)).toLocaleString();
-            document.getElementById('totalAmount').textContent = `Total Unstake Amount: ${totalAmountInRSS3} RSS3`;
+        function displayTotalStats(nodeData, userData, bridgeWithdrawalData) {
+            const totalUnstakeAmount = (nodeData.total_amount / Math.pow(10, 18)).toLocaleString();
+            const totalBridgeWithdrawalAmount = (bridgeWithdrawalData.total_amount / Math.pow(10, 18)).toLocaleString();
+            document.getElementById('totalAmount').textContent = `Total Unstake Amount: ${totalUnstakeAmount} RSS3`;
+            document.getElementById('totalAmount').insertAdjacentHTML('afterend', `<div>Total Bridge Withdrawal Amount: ${totalBridgeWithdrawalAmount} RSS3</div>`);
+            document.getElementById('totalCount').textContent = `Total Unstake Count: ${nodeData.total_count}`;
+            document.getElementById('totalCount').insertAdjacentHTML('afterend', `<div>Total Bridge Withdrawal Count: ${bridgeWithdrawalData.total_count}</div>`);
         }
 
         function sortDataByAmount(data) {
@@ -205,23 +206,34 @@
                 .sort((a, b) => b.total_amount - a.total_amount);
         }
 
-        Promise.all([fetchNodeData(), fetchUserData()]).then(async ([nodeData, userData]) => {
+        Promise.all([fetchNodeData(), fetchUserData(), fetchBridgeWithdrawalData()]).then(async ([nodeData, userData, bridgeWithdrawalData]) => {
             let nodeDataWithNames = await fetchAllNodeNames(nodeData.results);
             
             // 对数据进行排序
             nodeDataWithNames = sortDataByAmount(nodeDataWithNames);
             
-            // 过滤并排序用户数据，最小金额为 20000 * 10^18 (因为金额单位是 wei)
-            userData.results = filterAndSortData(userData.results, 20000 * Math.pow(10, 18));
+            // 合并用户数据和桥接提款数据
+            let combinedUserData = userData.results.map(user => {
+                const bridgeWithdrawal = bridgeWithdrawalData.results.find(bw => bw.address === user.address);
+                return {
+                    address: user.address,
+                    unstake_amount: user.total_amount,
+                    bridge_withdrawal_amount: bridgeWithdrawal ? bridgeWithdrawal.total_amount : 0,
+                    total_amount: user.total_amount + (bridgeWithdrawal ? bridgeWithdrawal.total_amount : 0)
+                };
+            });
             
-            displayTotalStats(nodeData); // 假设节点和用户的总计数是相同的
+            // 过滤并排序合并后的用户数据，最小金额为 20000 * 10^18 (因为金额单位是 wei)
+            combinedUserData = filterAndSortData(combinedUserData, 20000 * Math.pow(10, 18));
+            
+            displayTotalStats(nodeData, userData, bridgeWithdrawalData);
 
-            const nodeAmountChart = createChart('nodeAmountChart', 'Amount', nodeDataWithNames, 'rgba(75, 192, 192, 0.6)', 'Unstake Amount By Node', false);
-            const userAmountChart = createChart('userAmountChart', 'Amount', userData.results, 'rgba(255, 99, 132, 0.6)', 'Unstake Amount By User', true);
+            const nodeAmountChart = createChart('nodeAmountChart', 'Amount', nodeDataWithNames, 'rgba(75, 192, 192, 0.6)', 'Total Unstake Amount By Node', false);
+            const userAmountChart = createChart('userAmountChart', 'Amount', combinedUserData, null, 'Unstake and Bridge Withdrawal Amount By User', true);
             
             setTimeout(() => {
                 createAddressLinks(nodeDataWithNames, 'nodeAmountChartLinks', nodeAmountChart, true);
-                createAddressLinks(userData.results, 'userAmountChartLinks', userAmountChart, false);
+                createAddressLinks(combinedUserData, 'userAmountChartLinks', userAmountChart, false);
             }, 0);
         });
     </script>

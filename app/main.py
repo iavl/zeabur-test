@@ -30,6 +30,13 @@ async def get_user_statistics():
     await scanner.start_scanning(latest_block)
     return await scanner.get_user_statistics()
 
+@app.get("/bridge_withdrawal_statistics")
+async def get_bridge_withdrawal_statistics():
+    latest_block = await get_latest_block_number()
+    print("latest block:", latest_block)
+    await scanner.start_scanning(latest_block)
+    return await scanner.get_bridge_withdrawal_statistics()
+
 @app.get("/", response_class=HTMLResponse)
 async def chart(request: Request):
     latest_block = await get_latest_block_number()

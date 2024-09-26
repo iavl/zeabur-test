@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 from typing import Dict, List
-from .utils import fetch_logs, parse_log
+from .utils import fetch_unstake_logs, parse_unstake_log, fetch_bridge_withdrawal_logs, parse_bridge_withdrawal_log
 from .models import ScanResult, StatisticsResponse
 
 class BaseScanner:
@@ -43,11 +43,11 @@ class BaseScanner:
 
         while True:
             end_block = min(self.start_block + self.block_interval, latest_block)
-            logs = await fetch_logs(self.start_block, end_block)
-            print(f"Fetch logs for {self.__class__.__name__}: [{self.start_block} - {end_block}], count: {len(logs)}")
+            logs = await fetch_unstake_logs(self.start_block, end_block)
+            print(f"Fetch unstake logs for {self.__class__.__name__}: [{self.start_block} - {end_block}], count: {len(logs)}")
 
             for log in logs:
-                parsed_log = parse_log(log)
+                parsed_log = parse_unstake_log(log)
                 if parsed_log:
                     self.update_results(parsed_log)
             
@@ -94,15 +94,51 @@ class UserScanner(BaseScanner):
         self.results[user_address].total_amount += log['amount']
         self.results[user_address].total_count += 1
 
+class BridgeWithdrawalScanner(BaseScanner):
+    def __init__(self):
+        super().__init__("bridge_withdrawal_scan_results.json")
+
+    async def start_scanning(self, latest_block: int):
+        print(f"Start scanning {self.__class__.__name__} from block: {self.start_block}")
+        if self.start_block == 0:
+            self.start_block = latest_block - 10000
+
+        while True:
+            end_block = min(self.start_block + self.block_interval, latest_block)
+            logs = await fetch_bridge_withdrawal_logs(self.start_block, end_block)
+            print(f"Fetch logs for {self.__class__.__name__}: [{self.start_block} - {end_block}], count: {len(logs)}")
+
+            for log in logs:
+                parsed_log = parse_bridge_withdrawal_log(log)
+                if parsed_log:
+                    self.update_results(parsed_log)
+            
+            self.start_block = end_block + 1
+            self.save_results()
+
+            if self.start_block > latest_block:
+                print(f"Scan block end for {self.__class__.__name__}")
+                break
+
+    def update_results(self, log: Dict):
+        user_address = log['user_address']
+        if user_address not in self.results:
+            self.results[user_address] = ScanResult(address=user_address, total_amount=0, total_count=0)
+        
+        self.results[user_address].total_amount += log['amount']
+        self.results[user_address].total_count += 1
+
 class CombinedScanner:
     def __init__(self):
         self.node_scanner = NodeScanner()
         self.user_scanner = UserScanner()
+        self.bridge_withdrawal_scanner = BridgeWithdrawalScanner()
 
     async def start_scanning(self, latest_block: int):
         await asyncio.gather(
             self.node_scanner.start_scanning(latest_block),
-            self.user_scanner.start_scanning(latest_block)
+            self.user_scanner.start_scanning(latest_block),
+            self.bridge_withdrawal_scanner.start_scanning(latest_block)
         )
 
     async def get_node_statistics(self):
@@ -119,4 +155,12 @@ class CombinedScanner:
             "results": user_stats.results,
             "total_count": user_stats.total_count,
             "total_amount": user_stats.total_amount
+        }
+
+    async def get_bridge_withdrawal_statistics(self):
+        bridge_stats = await self.bridge_withdrawal_scanner.get_statistics()
+        return {
+            "results": bridge_stats.results,
+            "total_count": bridge_stats.total_count,
+            "total_amount": bridge_stats.total_amount
         }
