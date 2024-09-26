@@ -8,28 +8,29 @@
     <style>
         .chart-container {
             position: relative;
-            height: 400px;
-            margin-bottom: 200px; /* Increased to accommodate longer labels */
+            height: 800px;
+            margin-bottom: 180px;
         }
         .address-links {
             position: absolute;
             top: 100%;
             left: 0;
             right: 0;
-            height: 170px; /* Increased height for longer labels */
-            overflow: hidden;
+            height: 160px;
+            overflow: visible;
         }
         .address-links a {
-            font-size: 10px;
+            font-size: 9px;
             text-align: left;
             text-decoration: none;
             color: #333;
-            max-width: none; /* Remove max-width to allow full width */
-            width: 100%;
+            max-width: none;
+            width: 18px;
             display: block;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            line-height: 1;
         }
         .address-links a:hover {
             text-decoration: underline;
@@ -108,14 +109,17 @@
                     : `https://explorer.rss3.io/portfolio/${item.address}`;
                 link.target = '_blank';
                 const displayText = isNode ? item.name : item.address;
-                link.textContent = displayText;
-                link.title = item.address;
+                const truncatedText = displayText.length > 20 ? displayText.slice(0, 20) + '...' : displayText;
+                link.textContent = truncatedText;
+                link.title = displayText; // Show full name on hover
                 link.style.position = 'absolute';
-                link.style.width = `${barWidth}px`;
-                link.style.left = `${chartArea.left + index * barWidth}px`;
-                link.style.top = '0';
-                link.style.transformOrigin = 'left top';
-                link.style.transform = 'rotate(-45deg) translateY(100%)';
+                link.style.width = '18px';
+                link.style.left = `${chartArea.left + index * barWidth + barWidth/2 - 9}px`;
+                link.style.top = '15px';
+                link.style.writingMode = 'vertical-rl';
+                link.style.textOrientation = 'mixed';
+                link.style.transformOrigin = 'top center';
+                link.style.transform = 'rotate(180deg)';
                 container.appendChild(link);
             });
         }
@@ -144,7 +148,7 @@
             const chart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: data.map(item => ''),
+                    labels: data.map(item => item.address),
                     datasets: datasets
                 },
                 options: {
@@ -196,6 +200,11 @@
                                     return `${item.name || item.address}\nAddress: ${item.address}`;
                                 }
                             }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            bottom: 90
                         }
                     }
                 }
