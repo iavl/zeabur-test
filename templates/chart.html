@@ -117,7 +117,7 @@
                     labels: data.map(item => ''),
                     datasets: [{
                         label: label,
-                        data: data.map(item => log2(item.total_amount / Math.pow(10, 18))),
+                        data: data.map(item => item.total_amount / Math.pow(10, 18)),
                         backgroundColor: backgroundColor
                     }]
                 },
@@ -136,8 +136,7 @@
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value, index, values) {
-                                    if (value === 0) return '0';
-                                    return (Math.pow(2, value) - 1).toLocaleString() + ' RSS3';
+                                    return value.toLocaleString() + ' RSS3';
                                 }
                             }
                         }
@@ -158,8 +157,7 @@
                                         label += ': ';
                                     }
                                     if (context.parsed.y !== null) {
-                                        const originalValue = (Math.pow(2, context.parsed.y) - 1).toLocaleString();
-                                        label += originalValue + ' RSS3';
+                                        label += context.parsed.y.toLocaleString() + ' RSS3';
                                     }
                                     return label;
                                 },
