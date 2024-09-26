@@ -105,12 +105,18 @@ class CombinedScanner:
             self.user_scanner.start_scanning(latest_block)
         )
 
-    async def get_statistics(self):
+    async def get_node_statistics(self):
         node_stats = await self.node_scanner.get_statistics()
+        return {
+            "results": node_stats.results,
+            "total_count": node_stats.total_count,
+            "total_amount": node_stats.total_amount
+        }
+
+    async def get_user_statistics(self):
         user_stats = await self.user_scanner.get_statistics()
         return {
-            "node_results": node_stats.results,
-            "user_results": user_stats.results,
-            "total_count": node_stats.total_count,  # 这里假设节点和用户的总计数是相同的
-            "total_amount": node_stats.total_amount  # 这里假设节点和用户的总金额是相同的
+            "results": user_stats.results,
+            "total_count": user_stats.total_count,
+            "total_amount": user_stats.total_amount
         }

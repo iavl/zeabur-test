@@ -16,12 +16,19 @@ async def startup_event():
     latest_block = await get_latest_block_number()
     await scanner.start_scanning(latest_block)
 
-@app.get("/statistics")
-async def get_statistics():
+@app.get("/node_statistics")
+async def get_node_statistics():
     latest_block = await get_latest_block_number()
     print("latest block:", latest_block)
     await scanner.start_scanning(latest_block)
-    return await scanner.get_statistics()
+    return await scanner.get_node_statistics()
+
+@app.get("/user_statistics")
+async def get_user_statistics():
+    latest_block = await get_latest_block_number()
+    print("latest block:", latest_block)
+    await scanner.start_scanning(latest_block)
+    return await scanner.get_user_statistics()
 
 @app.get("/", response_class=HTMLResponse)
 async def chart(request: Request):
