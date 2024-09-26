@@ -216,8 +216,8 @@
             
             displayTotalStats(nodeData); // 假设节点和用户的总计数是相同的
 
-            const nodeAmountChart = createChart('nodeAmountChart', 'Amount', nodeDataWithNames, 'rgba(75, 192, 192, 0.6)', 'Total Unstake Amount By Node', false);
-            const userAmountChart = createChart('userAmountChart', 'Amount', userData.results, 'rgba(255, 99, 132, 0.6)', 'Total Unstake Amount By User', true);
+            const nodeAmountChart = createChart('nodeAmountChart', 'Amount', nodeDataWithNames, 'rgba(75, 192, 192, 0.6)', 'Unstake Amount By Node', false);
+            const userAmountChart = createChart('userAmountChart', 'Amount', userData.results, 'rgba(255, 99, 132, 0.6)', 'Unstake Amount By User', true);
             
             setTimeout(() => {
                 createAddressLinks(nodeDataWithNames, 'nodeAmountChartLinks', nodeAmountChart, true);

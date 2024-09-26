@@ -32,6 +32,9 @@ async def get_user_statistics():
 
 @app.get("/", response_class=HTMLResponse)
 async def chart(request: Request):
+    latest_block = await get_latest_block_number()
+    print("latest block:", latest_block)
+    await scanner.start_scanning(latest_block)
     return templates.TemplateResponse("chart.html", {"request": request})
 
 @app.get("/rescan")
