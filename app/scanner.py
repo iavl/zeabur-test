@@ -3,14 +3,14 @@ import json
 import os
 from typing import Dict, List
 from .utils import fetch_logs, parse_log
-from .models import ScanResult
+from .models import ScanResult, StatisticsResponse
 
-class Scanner:
-    def __init__(self):
+class BaseScanner:
+    def __init__(self, results_file: str):
         self.results: Dict[str, ScanResult] = {}
         self.start_block = 7351004
         self.block_interval = 20000
-        self.results_file = "scan_results.json"
+        self.results_file = results_file
         self.load_results()
 
     def load_results(self):
@@ -37,27 +37,43 @@ class Scanner:
             json.dump(data, f)
 
     async def start_scanning(self, latest_block: int):
-        print("start block: ", self.start_block)
+        print(f"Start scanning {self.__class__.__name__} from block: {self.start_block}")
         if self.start_block == 0:
-            self.start_block = latest_block - 10000  # Start from 10000 blocks ago if no previous progress
+            self.start_block = latest_block - 10000
 
         while True:
             end_block = min(self.start_block + self.block_interval, latest_block)
             logs = await fetch_logs(self.start_block, end_block)
-            print("fetch logs: [", self.start_block, " - ", end_block, "]","count: ", len(logs))
+            print(f"Fetch logs for {self.__class__.__name__}: [{self.start_block} - {end_block}], count: {len(logs)}")
 
             for log in logs:
                 parsed_log = parse_log(log)
-                if parsed_log:  # Only update results if parsed_log is not None
+                if parsed_log:
                     self.update_results(parsed_log)
             
             self.start_block = end_block + 1
-            self.save_results()  # Save progress after each interval
+            self.save_results()
 
             if self.start_block > latest_block:
-                print("scan block end")
+                print(f"Scan block end for {self.__class__.__name__}")
                 break
-            
+
+    def update_results(self, log: Dict):
+        raise NotImplementedError("Subclasses must implement this method")
+
+    async def get_statistics(self):
+        total_count = sum(result.total_count for result in self.results.values())
+        total_amount = sum(result.total_amount for result in self.results.values())
+        return StatisticsResponse(
+            results=list(self.results.values()),
+            total_count=total_count,
+            total_amount=int(total_amount)
+        )
+
+class NodeScanner(BaseScanner):
+    def __init__(self):
+        super().__init__("node_scan_results.json")
+
     def update_results(self, log: Dict):
         node_address = log['node_address']
         if node_address not in self.results:
@@ -66,11 +82,35 @@ class Scanner:
         self.results[node_address].total_amount += log['amount']
         self.results[node_address].total_count += 1
 
+class UserScanner(BaseScanner):
+    def __init__(self):
+        super().__init__("user_scan_results.json")
+
+    def update_results(self, log: Dict):
+        user_address = log['user_address']
+        if user_address not in self.results:
+            self.results[user_address] = ScanResult(address=user_address, total_amount=0, total_count=0)
+        
+        self.results[user_address].total_amount += log['amount']
+        self.results[user_address].total_count += 1
+
+class CombinedScanner:
+    def __init__(self):
+        self.node_scanner = NodeScanner()
+        self.user_scanner = UserScanner()
+
+    async def start_scanning(self, latest_block: int):
+        await asyncio.gather(
+            self.node_scanner.start_scanning(latest_block),
+            self.user_scanner.start_scanning(latest_block)
+        )
+
     async def get_statistics(self):
-        total_count = sum(result.total_count for result in self.results.values())
-        total_amount = sum(result.total_amount for result in self.results.values())
+        node_stats = await self.node_scanner.get_statistics()
+        user_stats = await self.user_scanner.get_statistics()
         return {
-            "results": list(self.results.values()),
-            "total_count": total_count,
-            "total_amount": int(total_amount)
+            "node_results": node_stats.results,
+            "user_results": user_stats.results,
+            "total_count": node_stats.total_count,  # 这里假设节点和用户的总计数是相同的
+            "total_amount": node_stats.total_amount  # 这里假设节点和用户的总金额是相同的
         }

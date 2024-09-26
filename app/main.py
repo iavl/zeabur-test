@@ -1,22 +1,20 @@
 from fastapi import FastAPI, BackgroundTasks, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
-from .scanner import Scanner
-from .models import ScanResult, StatisticsResponse
+from .scanner import CombinedScanner
 from .utils import get_latest_block_number
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
-scanner = Scanner()
+scanner = CombinedScanner()
 
 @app.on_event("startup")
 async def startup_event():
     latest_block = await get_latest_block_number()
     await scanner.start_scanning(latest_block)
 
-@app.get("/statistics", response_model=StatisticsResponse)
+@app.get("/statistics")
 async def get_statistics():
     latest_block = await get_latest_block_number()
     print("latest block:", latest_block)

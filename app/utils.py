@@ -51,11 +51,13 @@ def parse_log(log: Dict) -> Optional[Dict]:
     if log['topics'][0] != EXPECTED_TOPIC:
         return None
     
+    user_address = "0x" + log['topics'][1][-40:]
     node_address = "0x" + log['topics'][2][-40:]
     amount = int(log['data'][0:66], 16)
     return {
         "tx_hash": log['transactionHash'],
-        "node_address": "0x" + log['topics'][2][-40:],
+        "node_address": node_address,
+        "user_address": user_address,
         "amount": amount
     }
 
