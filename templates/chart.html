@@ -43,6 +43,22 @@
             margin-top: 10px;
             font-size: 16px;
         }
+        .scale-toggle {
+            margin-bottom: 10px;
+        }
+        .scale-toggle button {
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .scale-toggle button.logarithmic {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .scale-toggle button.linear {
+            background-color: #008CBA;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -52,11 +68,17 @@
         <div id="totalCount"></div>
     </div>
     <h2>Node Statistics <a href="/node_statistics" class="detail-link">(View Node Details)</a></h2>
+    <div class="scale-toggle">
+        <button id="nodeScaleToggle" class="logarithmic">Current: Logarithmic Scale</button>
+    </div>
     <div class="chart-container">
         <canvas id="nodeAmountChart"></canvas>
         <div id="nodeAmountChartLinks" class="address-links"></div>
     </div>
     <h2>User Statistics <a href="/user_statistics" class="detail-link">(View User Details)</a></h2>
+    <div class="scale-toggle">
+        <button id="userScaleToggle" class="logarithmic">Current: Logarithmic Scale</button>
+    </div>
     <div class="chart-container">
         <canvas id="userAmountChart"></canvas>
         <div id="userAmountChartLinks" class="address-links"></div>
@@ -114,7 +136,7 @@
                 link.title = displayText; // Show full name on hover
                 link.style.position = 'absolute';
                 link.style.width = '18px';
-                link.style.left = `${chartArea.left + index * barWidth + barWidth/2 - 9}px`;
+                link.style.left = `${chartArea.left + index * barWidth + (isNode ? barWidth/2 : barWidth/4) - 9}px`;
                 link.style.top = '15px';
                 link.style.writingMode = 'vertical-rl';
                 link.style.textOrientation = 'mixed';
@@ -126,29 +148,38 @@
 
         function createChart(elementId, label, data, backgroundColor, title, isUserChart = false) {
             const ctx = document.getElementById(elementId).getContext('2d');
-            const datasets = isUserChart ? [
-                {
-                    label: 'Unstake Amount',
-                    data: data.map(item => item.unstake_amount / Math.pow(10, 18)),
-                    backgroundColor: 'rgba(255, 99, 132, 0.6)'
-                },
-                {
-                    label: 'Bridge Withdrawal Amount',
-                    data: data.map(item => item.bridge_withdrawal_amount / Math.pow(10, 18)),
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)'
-                }
-            ] : [
-                {
-                    label: label,
-                    data: data.map(item => item.total_amount / Math.pow(10, 18)),
-                    backgroundColor: backgroundColor
-                }
-            ];
+            let datasets;
+            let labels;
 
-            const chart = new Chart(ctx, {
+            if (isUserChart) {
+                datasets = [
+                    {
+                        label: 'Unstake Amount',
+                        data: data.map(item => item.unstake_amount / Math.pow(10, 18)),
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                    },
+                    {
+                        label: 'Bridge Withdrawal Amount',
+                        data: data.map(item => item.bridge_withdrawal_amount / Math.pow(10, 18)),
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                    }
+                ];
+                labels = data.map(item => item.address);
+            } else {
+                datasets = [
+                    {
+                        label: label,
+                        data: data.map(item => item.total_amount / Math.pow(10, 18)),
+                        backgroundColor: backgroundColor
+                    }
+                ];
+                labels = data.map(item => item.address);
+            }
+
+            const chartConfig = {
                 type: 'bar',
                 data: {
-                    labels: data.map(item => item.address),
+                    labels: labels,
                     datasets: datasets
                 },
                 options: {
@@ -156,20 +187,38 @@
                     maintainAspectRatio: false,
                     scales: {
                         x: {
-                            display: false,
-                            stacked: isUserChart,
+                            display: true,
+                            stacked: false,
                             grid: {
                                 display: false
                             },
-                            barPercentage: isUserChart ? 0.6 : 0.9,
-                            categoryPercentage: isUserChart ? 0.8 : 0.9
+                            barPercentage: isUserChart ? 0.4 : 0.8,
+                            categoryPercentage: isUserChart ? 0.7 : 0.9,
+                            title: {
+                                display: true,
+                                text: isUserChart ? 'User Address' : 'Node Name',  // Updated X-axis title for user chart
+                                font: {
+                                    size: 14
+                                }
+                            },
+                            ticks: {
+                                display: false  // Hide X-axis ticks
+                            }
                         },
                         y: {
-                            type: 'linear',
-                            stacked: isUserChart,
+                            type: 'logarithmic',
+                            stacked: false,
                             beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: isUserChart ? 'Unstake and Withdrawal Amount (RSS3)' : 'Unstake Amount (RSS3)',  // Updated Y-axis title for user chart
+                                font: {
+                                    size: 14
+                                }
+                            },
                             ticks: {
                                 callback: function(value, index, values) {
+                                    if (value === 0) return '0';
                                     return value.toLocaleString() + ' RSS3';
                                 }
                             }
@@ -197,19 +246,35 @@
                                 },
                                 title: function(tooltipItems) {
                                     const item = data[tooltipItems[0].dataIndex];
-                                    return `${item.name || item.address}\nAddress: ${item.address}`;
+                                    return `Address: ${item.address}`;
                                 }
                             }
                         }
                     },
                     layout: {
                         padding: {
-                            bottom: 90
+                            bottom: 90,
+                            left: 10,  // Added left padding for Y-axis label
+                            right: 10  // Added right padding for better appearance
                         }
                     }
                 }
-            });
-            return chart;
+            };
+
+            const chart = new Chart(ctx, chartConfig);
+
+            function toggleScale() {
+                const currentType = chart.options.scales.y.type;
+                const newType = currentType === 'linear' ? 'logarithmic' : 'linear';
+                chart.options.scales.y.type = newType;
+                chart.update();
+
+                const toggleButton = document.getElementById(isUserChart ? 'userScaleToggle' : 'nodeScaleToggle');
+                toggleButton.textContent = `Current: ${newType.charAt(0).toUpperCase() + newType.slice(1)} Scale`;
+                toggleButton.className = newType;
+            }
+
+            return { chart, toggleScale };
         }
 
         function displayTotalStats(nodeData, userData, bridgeWithdrawalData) {
@@ -250,9 +315,12 @@
             
             displayTotalStats(nodeData, userData, bridgeWithdrawalData);
 
-            const nodeAmountChart = createChart('nodeAmountChart', 'Unstake Amount', nodeDataWithNames, 'rgba(75, 192, 192, 0.6)', 'Total Unstake Amount By Node', false);
-            const userAmountChart = createChart('userAmountChart', 'Amount', combinedUserData, null, 'Unstake and Bridge Withdrawal Amount By User', true);
+            const { chart: nodeAmountChart, toggleScale: toggleNodeScale } = createChart('nodeAmountChart', 'Unstake Amount', nodeDataWithNames, 'rgba(75, 192, 192, 0.6)', 'Total Unstake Amount By Node', false);
+            const { chart: userAmountChart, toggleScale: toggleUserScale } = createChart('userAmountChart', null, combinedUserData, null, 'Unstake and Bridge Withdrawal Amount By User', true);
             
+            document.getElementById('nodeScaleToggle').addEventListener('click', toggleNodeScale);
+            document.getElementById('userScaleToggle').addEventListener('click', toggleUserScale);
+
             setTimeout(() => {
                 createAddressLinks(nodeDataWithNames, 'nodeAmountChartLinks', nodeAmountChart, true);
                 createAddressLinks(combinedUserData, 'userAmountChartLinks', userAmountChart, false);
