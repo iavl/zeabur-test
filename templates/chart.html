@@ -5,11 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unstake and Bridge Withdrawal Statistics</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1"></script>
     <style>
         .chart-container {
             position: relative;
             height: 800px;
+            width: 100%;
+            overflow-x: auto;
             margin-bottom: 180px;
+        }
+        .chart-scroll-container {
+            height: 100%;
+        }
+        canvas {
+            display: block;
         }
         .address-links {
             position: absolute;
@@ -72,7 +82,9 @@
         <button id="nodeScaleToggle" class="logarithmic">Current: Logarithmic Scale</button>
     </div>
     <div class="chart-container">
-        <canvas id="nodeAmountChart"></canvas>
+        <div class="chart-scroll-container">
+            <canvas id="nodeAmountChart"></canvas>
+        </div>
         <div id="nodeAmountChartLinks" class="address-links"></div>
     </div>
     <h2>User Statistics <a href="/user_statistics" class="detail-link">(View User Details)</a></h2>
@@ -80,7 +92,9 @@
         <button id="userScaleToggle" class="logarithmic">Current: Logarithmic Scale</button>
     </div>
     <div class="chart-container">
-        <canvas id="userAmountChart"></canvas>
+        <div class="chart-scroll-container">
+            <canvas id="userAmountChart"></canvas>
+        </div>
         <div id="userAmountChartLinks" class="address-links"></div>
     </div>
 
@@ -136,7 +150,7 @@
                 link.title = displayText; // Show full name on hover
                 link.style.position = 'absolute';
                 link.style.width = '18px';
-                link.style.left = `${chartArea.left + index * barWidth + (isNode ? barWidth/2 : barWidth/4) - 9}px`;
+                link.style.left = `${chartArea.left + index * barWidth + barWidth / 2 - 9}px`; // Center the label under the bar
                 link.style.top = '15px';
                 link.style.writingMode = 'vertical-rl';
                 link.style.textOrientation = 'mixed';
@@ -156,12 +170,16 @@
                     {
                         label: 'Unstake Amount',
                         data: data.map(item => item.unstake_amount / Math.pow(10, 18)),
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
                     },
                     {
                         label: 'Bridge Withdrawal Amount',
                         data: data.map(item => item.bridge_withdrawal_amount / Math.pow(10, 18)),
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
                     }
                 ];
                 labels = data.map(item => item.address);
@@ -176,6 +194,13 @@
                 labels = data.map(item => item.address);
             }
 
+            // Calculate the width based on the number of data points
+            const minWidth = Math.max(data.length * (isUserChart ? 60 : 40), window.innerWidth); // Increased width for user chart
+
+            // Set the width of the chart container
+            const container = document.getElementById(elementId).parentNode;
+            container.style.width = `${minWidth}px`;
+
             const chartConfig = {
                 type: 'bar',
                 data: {
@@ -187,23 +212,13 @@
                     maintainAspectRatio: false,
                     scales: {
                         x: {
-                            display: true,
-                            stacked: false,
+                            display: false,
                             grid: {
                                 display: false
                             },
-                            barPercentage: isUserChart ? 0.4 : 0.8,
-                            categoryPercentage: isUserChart ? 0.7 : 0.9,
-                            title: {
-                                display: true,
-                                text: isUserChart ? 'User Address' : 'Node Name',  // Updated X-axis title for user chart
-                                font: {
-                                    size: 14
-                                }
-                            },
-                            ticks: {
-                                display: false  // Hide X-axis ticks
-                            }
+                            stacked: false,
+                            barPercentage: isUserChart ? 0.9 : 0.8, // Increased for user chart
+                            categoryPercentage: 0.8
                         },
                         y: {
                             type: 'logarithmic',
@@ -211,7 +226,7 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: isUserChart ? 'Unstake and Withdrawal Amount (RSS3)' : 'Unstake Amount (RSS3)',  // Updated Y-axis title for user chart
+                                text: isUserChart ? 'Unstake and Withdrawal Amount (RSS3)' : 'Unstake Amount (RSS3)',
                                 font: {
                                     size: 14
                                 }
@@ -249,13 +264,16 @@
                                     return `Address: ${item.address}`;
                                 }
                             }
+                        },
+                        legend: {
+                            display: isUserChart
                         }
                     },
                     layout: {
                         padding: {
                             bottom: 90,
-                            left: 10,  // Added left padding for Y-axis label
-                            right: 10  // Added right padding for better appearance
+                            left: 10,
+                            right: 10
                         }
                     }
                 }
@@ -301,22 +319,44 @@
             
             nodeDataWithNames = sortDataByAmount(nodeDataWithNames);
             
-            let combinedUserData = userData.results.map(user => {
-                const bridgeWithdrawal = bridgeWithdrawalData.results.find(bw => bw.address === user.address);
-                return {
+            // Create a map of all unique addresses
+            const addressMap = new Map();
+            
+            // Add user data to the map
+            userData.results.forEach(user => {
+                addressMap.set(user.address, {
                     address: user.address,
                     unstake_amount: user.total_amount,
-                    bridge_withdrawal_amount: bridgeWithdrawal ? bridgeWithdrawal.total_amount : 0,
-                    total_amount: user.total_amount + (bridgeWithdrawal ? bridgeWithdrawal.total_amount : 0)
-                };
+                    bridge_withdrawal_amount: 0,
+                    total_amount: user.total_amount
+                });
             });
             
-            combinedUserData = filterAndSortData(combinedUserData, 10000 * Math.pow(10, 18));
+            // Add or update bridge withdrawal data in the map
+            bridgeWithdrawalData.results.forEach(bw => {
+                if (addressMap.has(bw.address)) {
+                    const userData = addressMap.get(bw.address);
+                    userData.bridge_withdrawal_amount = bw.total_amount;
+                    userData.total_amount += bw.total_amount;
+                } else {
+                    addressMap.set(bw.address, {
+                        address: bw.address,
+                        unstake_amount: 0,
+                        bridge_withdrawal_amount: bw.total_amount,
+                        total_amount: bw.total_amount
+                    });
+                }
+            });
+            
+            // Convert the map to an array, filter out entries with less than 10000 RSS3, and sort it
+            let combinedUserData = Array.from(addressMap.values())
+                .filter(user => user.total_amount >= 10000 * Math.pow(10, 18)) // Filter out entries less than 10000 RSS3
+                .sort((a, b) => b.total_amount - a.total_amount);
             
             displayTotalStats(nodeData, userData, bridgeWithdrawalData);
 
             const { chart: nodeAmountChart, toggleScale: toggleNodeScale } = createChart('nodeAmountChart', 'Unstake Amount', nodeDataWithNames, 'rgba(75, 192, 192, 0.6)', 'Total Unstake Amount By Node', false);
-            const { chart: userAmountChart, toggleScale: toggleUserScale } = createChart('userAmountChart', null, combinedUserData, null, 'Unstake and Bridge Withdrawal Amount By User', true);
+            const { chart: userAmountChart, toggleScale: toggleUserScale } = createChart('userAmountChart', null, combinedUserData, null, 'Unstake and Bridge Withdrawal Amount By User (≥10000 RSS3)', true);
             
             document.getElementById('nodeScaleToggle').addEventListener('click', toggleNodeScale);
             document.getElementById('userScaleToggle').addEventListener('click', toggleUserScale);

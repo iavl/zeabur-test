@@ -1,6 +1,94 @@
 INFO:     Will watch for changes in these directories: ['/root/zeabur-test']
 INFO:     Uvicorn running on http://0.0.0.0:10001 (Press CTRL+C to quit)
-INFO:     Started reloader process [94395] using StatReload
-INFO:     Started server process [94408]
+INFO:     Started reloader process [47988] using StatReload
+INFO:     Started server process [47995]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
+Requesting URL: https://scan.rss3.io/api?module=block&action=eth_block_number
+Start scanning NodeScanner from block: 9818375
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818375&toBlock=9818400&address=0x28F14d917fddbA0c1f2923C406952478DfDA5578&topic0=0x2808f92d5a0fada467cbe4e766f62f323e78271a7471058a87ef63a9e3e4c5c5
+Start scanning UserScanner from block: 9818375
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818375&toBlock=9818400&address=0x28F14d917fddbA0c1f2923C406952478DfDA5578&topic0=0x2808f92d5a0fada467cbe4e766f62f323e78271a7471058a87ef63a9e3e4c5c5
+Start scanning BridgeWithdrawalScanner from block: 9818375
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818375&toBlock=9818400&address=0x4200000000000000000000000000000000000010&topic0=0x73d170910aba9e6d50b102db522b1dbcd796216f5128b445aa2135272886497e
+No logs found
+Fetch unstake logs for UserScanner: [9818375 - 9818400], count: 0
+Scan block end for UserScanner
+No logs found
+Fetch unstake logs for NodeScanner: [9818375 - 9818400], count: 0
+Scan block end for NodeScanner
+No logs found
+Fetch logs for BridgeWithdrawalScanner: [9818375 - 9818400], count: 0
+Scan block end for BridgeWithdrawalScanner
+Requesting URL: https://scan.rss3.io/api?module=block&action=eth_block_number
+latest block: 9818399
+Start scanning NodeScanner from block: 9818401
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818401&toBlock=9818399&address=0x28F14d917fddbA0c1f2923C406952478DfDA5578&topic0=0x2808f92d5a0fada467cbe4e766f62f323e78271a7471058a87ef63a9e3e4c5c5
+Start scanning UserScanner from block: 9818401
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818401&toBlock=9818399&address=0x28F14d917fddbA0c1f2923C406952478DfDA5578&topic0=0x2808f92d5a0fada467cbe4e766f62f323e78271a7471058a87ef63a9e3e4c5c5
+Start scanning BridgeWithdrawalScanner from block: 9818401
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818401&toBlock=9818399&address=0x4200000000000000000000000000000000000010&topic0=0x73d170910aba9e6d50b102db522b1dbcd796216f5128b445aa2135272886497e
+No logs found
+Fetch unstake logs for NodeScanner: [9818401 - 9818399], count: 0
+Scan block end for NodeScanner
+No logs found
+Fetch logs for BridgeWithdrawalScanner: [9818401 - 9818399], count: 0
+Scan block end for BridgeWithdrawalScanner
+No logs found
+Fetch unstake logs for UserScanner: [9818401 - 9818399], count: 0
+Scan block end for UserScanner
+INFO:     212.107.30.69:51501 - "GET / HTTP/1.1" 200 OK
+Requesting URL: https://scan.rss3.io/api?module=block&action=eth_block_number
+latest block: 9818401
+Start scanning NodeScanner from block: 9818400
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818400&toBlock=9818401&address=0x28F14d917fddbA0c1f2923C406952478DfDA5578&topic0=0x2808f92d5a0fada467cbe4e766f62f323e78271a7471058a87ef63a9e3e4c5c5
+Start scanning UserScanner from block: 9818400
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818400&toBlock=9818401&address=0x28F14d917fddbA0c1f2923C406952478DfDA5578&topic0=0x2808f92d5a0fada467cbe4e766f62f323e78271a7471058a87ef63a9e3e4c5c5
+Start scanning BridgeWithdrawalScanner from block: 9818400
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818400&toBlock=9818401&address=0x4200000000000000000000000000000000000010&topic0=0x73d170910aba9e6d50b102db522b1dbcd796216f5128b445aa2135272886497e
+No logs found
+No logs found
+Fetch logs for BridgeWithdrawalScanner: [9818400 - 9818401], count: 0
+Scan block end for BridgeWithdrawalScanner
+Fetch unstake logs for UserScanner: [9818400 - 9818401], count: 0
+Scan block end for UserScanner
+No logs found
+Fetch unstake logs for NodeScanner: [9818400 - 9818401], count: 0
+Scan block end for NodeScanner
+INFO:     212.107.30.69:51501 - "GET /node_statistics HTTP/1.1" 200 OK
+Requesting URL: https://scan.rss3.io/api?module=block&action=eth_block_number
+latest block: 9818400
+Start scanning NodeScanner from block: 9818402
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818402&toBlock=9818400&address=0x28F14d917fddbA0c1f2923C406952478DfDA5578&topic0=0x2808f92d5a0fada467cbe4e766f62f323e78271a7471058a87ef63a9e3e4c5c5
+Start scanning UserScanner from block: 9818402
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818402&toBlock=9818400&address=0x28F14d917fddbA0c1f2923C406952478DfDA5578&topic0=0x2808f92d5a0fada467cbe4e766f62f323e78271a7471058a87ef63a9e3e4c5c5
+Start scanning BridgeWithdrawalScanner from block: 9818402
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818402&toBlock=9818400&address=0x4200000000000000000000000000000000000010&topic0=0x73d170910aba9e6d50b102db522b1dbcd796216f5128b445aa2135272886497e
+No logs found
+Fetch unstake logs for NodeScanner: [9818402 - 9818400], count: 0
+Scan block end for NodeScanner
+No logs found
+Fetch unstake logs for UserScanner: [9818402 - 9818400], count: 0
+Scan block end for UserScanner
+No logs found
+Fetch logs for BridgeWithdrawalScanner: [9818402 - 9818400], count: 0
+Scan block end for BridgeWithdrawalScanner
+INFO:     212.107.30.69:23129 - "GET /bridge_withdrawal_statistics HTTP/1.1" 200 OK
+Requesting URL: https://scan.rss3.io/api?module=block&action=eth_block_number
+latest block: 9818400
+Start scanning NodeScanner from block: 9818401
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818401&toBlock=9818400&address=0x28F14d917fddbA0c1f2923C406952478DfDA5578&topic0=0x2808f92d5a0fada467cbe4e766f62f323e78271a7471058a87ef63a9e3e4c5c5
+Start scanning UserScanner from block: 9818401
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818401&toBlock=9818400&address=0x28F14d917fddbA0c1f2923C406952478DfDA5578&topic0=0x2808f92d5a0fada467cbe4e766f62f323e78271a7471058a87ef63a9e3e4c5c5
+Start scanning BridgeWithdrawalScanner from block: 9818401
+Requesting URL: https://scan.rss3.io/api?module=logs&action=getLogs&fromBlock=9818401&toBlock=9818400&address=0x4200000000000000000000000000000000000010&topic0=0x73d170910aba9e6d50b102db522b1dbcd796216f5128b445aa2135272886497e
+No logs found
+Fetch unstake logs for NodeScanner: [9818401 - 9818400], count: 0
+Scan block end for NodeScanner
+No logs found
+Fetch unstake logs for UserScanner: [9818401 - 9818400], count: 0
+Scan block end for UserScanner
+No logs found
+Fetch logs for BridgeWithdrawalScanner: [9818401 - 9818400], count: 0
+Scan block end for BridgeWithdrawalScanner
+INFO:     212.107.30.69:48161 - "GET /user_statistics HTTP/1.1" 200 OK
